@@ -754,8 +754,8 @@
   // ─────────────────────────────────────────────────────────────
   // CONFIG — paste your values here after setup
   // ─────────────────────────────────────────────────────────────
-  const WORKER_URL = 'YOUR_WORKER_URL_HERE'; // e.g. https://aurra.yourname.workers.dev
-  const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID_HERE';
+ const WORKER_URL = 'https://aurra.val-amoaku.workers.dev';
+const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
 
   // ─────────────────────────────────────────────────────────────
   // KEY MAPS
@@ -784,14 +784,14 @@
   // AUTH
   // ─────────────────────────────────────────────────────────────
   async function connectSpotify() {
-    const redirectUri = window.location.href.split('?')[0];
-    const verifier = generateVerifier();
-    const challenge = await generateChallenge(verifier);
+     redirectUri = window.location.href.split('?')[0];
+     verifier = generateVerifier();
+     challenge = await generateChallenge(verifier);
 
     sessionStorage.setItem('pkce_verifier', verifier);
     sessionStorage.setItem('redirect_uri', redirectUri);
 
-    const params = new URLSearchParams({
+     params = new URLSearchParams({
       client_id: SPOTIFY_CLIENT_ID,
       response_type: 'code',
       redirect_uri: redirectUri,
@@ -804,16 +804,16 @@
   }
 
   async function exchangeToken(code) {
-    const verifier = sessionStorage.getItem('pkce_verifier');
-    const redirectUri = sessionStorage.getItem('redirect_uri');
+     verifier = sessionStorage.getItem('pkce_verifier');
+     redirectUri = sessionStorage.getItem('redirect_uri');
 
-    const res = await fetch(`${WORKER_URL}/spotify/token`, {
+     res = await fetch(`${WORKER_URL}/spotify/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, redirect_uri: redirectUri, code_verifier: verifier }),
     });
 
-    const data = await res.json();
+     data = await res.json();
     if (data.access_token) {
       sessionStorage.setItem('spotify_token', data.access_token);
       window.history.replaceState({}, '', window.location.pathname);
@@ -836,7 +836,7 @@
   // SPOTIFY API
   // ─────────────────────────────────────────────────────────────
   async function spotifyFetch(endpoint) {
-    const res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+     res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
     if (!res.ok) {
