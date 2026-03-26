@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AuRRa — Find Your Sound</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --surface: rgba(255,255,255,0.05);
+      --surface2: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --muted: rgba(240,237,232,0.42);
+      --green: #a78bfa;
+      --green-dim: rgba(139,92,246,0.15);
+      --green-glow: rgba(139,92,246,0.3);
+      --accent2: #60a5fa;
+      --radius: 14px;
+
+      /* ── CONFIGURATION ──────────────────────────────────────
+         After deploying your Cloudflare Worker, paste its URL below.
+         Example: https://aurra.yourname.workers.dev
+         Also paste your Spotify Client ID.
+      ──────────────────────────────────────────────────────── */
+      --worker-url: "";
+      --spotify-client-id: "";
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.6;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 65%);
+      top: -250px;
+      right: -200px;
+      pointer-events: none;
+      z-index: 0;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    /* second orb */
+    .orb2 {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(96,165,250,0.1) 0%, transparent 65%);
+      bottom: -150px;
+      left: -100px;
+      pointer-events: none;
+      z-index: 0;
+      animation: drift 16s ease-in-out infinite alternate-reverse;
+    }
+
+    /* third orb — subtle pink center */
+    .orb3 {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(244,114,182,0.06) 0%, transparent 70%);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(30px, 40px); }
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 120px;
+      position: relative; z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    .header {
+      margin-bottom: 24px;
+      animation: slideIn 0.6s ease both;
+      text-align: center;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 8px;
+      justify-content: center;
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      line-height: 1.6;
+    }
+
+    .wordmark h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+    }
+
+    .wordmark h1 .accent { color: var(--green); }
+
+    .r-mirror {
+      display: inline-block;
+      transform: scaleX(-1);
+      color: var(--accent2);
+    }
+
+    .badge {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      padding: 3px 8px;
+      border: 1px solid var(--green);
+      border-radius: 4px;
+      color: var(--green);
+      text-transform: uppercase;
+    }
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    /* ── Landing (not connected) ── */
+    #landingScreen {
+      animation: slideIn 0.5s ease both;
+      display: flex;
+      justify-content: center;
+    }
+
+    .connect-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 520px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 80px rgba(139,92,246,0.08), 0 0 0 1px rgba(139,92,246,0.1);
+    }
+
+    .connect-card h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .connect-card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .feature-dot {
+      width: 6px;
+      height: 6px;
+      min-width: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #8b5cf6, #60a5fa);
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+      padding: 15px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      width: fit-content;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); filter: brightness(1.1); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border2);
+    }
+
+    .btn-ghost:hover { background: var(--surface2); }
+
+    /* ── Main screen ── */
+    #mainScreen { display: none; animation: slideIn 0.5s ease both; width: 100%; }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--green-dim);
+      border: 1px solid rgba(29,185,84,0.3);
+      border-radius: 99px;
+      font-size: 0.7rem;
+      color: var(--green);
+      margin-bottom: 20px;
+    }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .disconnect-btn {
+      margin-left: auto;
+      opacity: 0.5;
+      cursor: pointer;
+      font-size: 0.65rem;
+      background: none;
+      border: none;
+      color: var(--green);
+      font-family: 'Syne', sans-serif;
+    }
+
+    .disconnect-btn:hover { opacity: 1; }
+
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 15px 18px;
+      color: var(--text);
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: var(--green); }
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    .hint {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 32px;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      background: rgba(255,80,80,0.08);
+      border: 1px solid rgba(255,80,80,0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.75rem;
+      color: #ff8080;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── Loading ── */
+    #loadingSection {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 48px;
+      text-align: center;
+    }
+
+    .loading-ring {
+      width: 44px; height: 44px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text { font-size: 0.82rem; color: var(--muted); }
+    .loading-sub {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--green);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Song card ── */
+    #songCard { display: none; margin-bottom: 32px; animation: slideIn 0.4s ease both; }
+
+    .song-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 28px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 540px) { .song-card { flex-direction: column; } }
+
+    .song-art {
+      width: 96px; height: 96px; min-width: 96px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--bg2);
+    }
+
+    .song-info { flex: 1; }
+
+    .song-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 3px;
+    }
+
+    .song-artist {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .dna-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+      gap: 8px;
+    }
+
+    .dna-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .dna-chip-label {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.52rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .dna-chip-value {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--green);
+    }
+
+    .genre-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .genre-tag {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.6rem;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--muted);
+    }
+
+    /* ── Results ── */
+    #resultsSection { display: none; animation: slideIn 0.4s ease both; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .results-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .results-header h2 span { color: var(--green); font-family: 'Syne Mono', monospace; }
+
+    .rec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .rec-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rec-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--green), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .rec-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    }
+
+    .rec-card:hover::before { opacity: 1; }
+
+    .rec-num {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      letter-spacing: 0.1em;
+    }
+
+    .rec-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 3px;
+      line-height: 1.3;
+    }
+
+    .rec-artist {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .rec-reason {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 14px;
+      border-left: 2px solid var(--green-dim);
+      padding-left: 10px;
+    }
+
+    .rec-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    .rec-tag {
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.58rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--green-dim);
+      border: 1px solid rgba(139,92,246,0.3);
+      color: var(--green);
+    }
+
+    .rec-spotify-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--green);
+      text-decoration: none;
+      padding: 7px 12px;
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 6px;
+      background: var(--green-dim);
+      transition: all 0.2s;
+      font-family: 'Syne', sans-serif;
+    }
+
+    .rec-spotify-btn:hover {
+      background: rgba(139,92,246,0.25);
+      border-color: var(--green);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, var(--bg) 60%, transparent);
+      padding: 20px 24px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Syne Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      z-index: 10;
+    }
+
+    .mascot {
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .mascot:hover { transform: translateY(-4px); }
+
+    .mascot:hover .mascot-tooltip { opacity: 1; transform: translateY(-4px); }
+
+    .mascot-tooltip {
+      position: absolute;
+      bottom: 48px;
+      right: 0;
+      background: #1e1b2e;
+      border: 1px solid rgba(139,92,246,0.4);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.65rem;
+      color: #a78bfa;
+      white-space: nowrap;
+      opacity: 0;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      letter-spacing: 0.05em;
+    }
+
+    .mascot-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      right: 12px;
+      border: 4px solid transparent;
+      border-top-color: rgba(139,92,246,0.4);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .stagger { opacity: 0; animation: slideIn 0.4s ease forwards; }
+  </style>
+</head>
+<body>
+<div class="orb2"></div>
+<div class="orb3"></div>
+<div class="app">
+
+  <header class="header">
+    <div class="wordmark">
+      <h1><span style="color:var(--text)">Au</span><span class="r-mirror accent">R</span><span class="accent">R</span><span style="color:var(--text)">a</span></h1>
+      <div class="badge">AI-Powered</div>
+    </div>
+    <p>Because "fans also like" isn't good enough.</p>
+  </header>
+
+  <!-- ── LANDING (not connected) ── -->
+  <div id="landingScreen">
+    <div class="connect-card">
+      <h2>Stop Googling<br/>"songs that sound like—"</h2>
+      <p>Aurra reads the musical DNA of any song — BPM, key, energy, mood — and finds songs that match.</p>
+      <div class="feature-list">
+        <div class="feature"><div class="feature-dot"></div>Real audio analysis straight from Spotify</div>
+        <div class="feature"><div class="feature-dot"></div>AI recommendations based on actual musical DNA</div>
+        <div class="feature"><div class="feature-dot"></div>Direct links so you can listen immediately</div>
+      </div>
+      <button class="btn" onclick="connectSpotify()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 11-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.781.781 0 01.52-.973c3.632-1.102 8.147-.568 11.234 1.329a.78.78 0 01.256 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.937.937 0 11-.543-1.793c3.541-1.073 9.431-.866 13.152 1.337a.937.937 0 01-.992 1.613z"/></svg>
+        Connect with Spotify
+      </button>
+    </div>
+  </div>
+
+  <!-- ── MAIN SCREEN ── -->
+  <div id="mainScreen">
+    <div class="user-pill">
+      <div class="dot"></div>
+      <span id="userLabel">Connected to Spotify</span>
+      <button class="disconnect-btn" onclick="disconnect()">disconnect</button>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="spotifyLinkInput"
+        placeholder="Paste a Spotify song link..."
+        onkeydown="if(event.key==='Enter') analyze()"/>
+      <button class="btn" id="analyzeBtn" onclick="analyze()">Analyze</button>
+    </div>
+    <div class="hint">open.spotify.com/track/... or spotify:track:...</div>
+    <div id="mainError" class="error-box"></div>
+
+    <!-- Loading -->
+    <div id="loadingSection">
+      <div class="loading-ring"></div>
+      <div class="loading-text" id="loadingText">Fetching song data...</div>
+      <div class="loading-sub" id="loadingSub">reading musical DNA</div>
+    </div>
+
+    <!-- Song card -->
+    <div id="songCard">
+      <div class="song-card">
+        <img class="song-art" id="songArt" src="" alt=""/>
+        <div class="song-info">
+          <div class="song-title" id="songTitle">—</div>
+          <div class="song-artist" id="songArtist">—</div>
+          <div class="dna-grid" id="dnaGrid"></div>
+          <div class="genre-tags" id="genreTags"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection">
+      <div class="results-header">
+        <h2>Songs that match your <span>DNA</span></h2>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:9px 16px" onclick="analyze()">↻ Refresh</button>
+      </div>
+      <div class="rec-grid" id="recGrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>Aurra v1.0</span>
+  <span>Spotify API × Claude AI</span>
+  <div class="mascot" title="hi i'm aurora :)">
+    <svg width="36" height="42" viewBox="0 0 36 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Headphone band -->
+      <path d="M7 14 Q18 4 29 14" stroke="#8b5cf6" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <!-- Headphone left cup -->
+      <rect x="2" y="12" width="5" height="8" rx="2.5" fill="#8b5cf6"/>
+      <!-- Headphone right cup -->
+      <rect x="29" y="12" width="5" height="8" rx="2.5" fill="#8b5cf6"/>
+      <!-- Antenna -->
+      <line x1="18" y1="12" x2="18" y2="7" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="18" cy="5.5" r="2.5" fill="#60a5fa"/>
+      <circle cx="18" cy="5.5" r="1" fill="white" opacity="0.9"/>
+      <!-- Head -->
+      <rect x="7" y="12" width="22" height="18" rx="6" fill="#1e1b2e" stroke="#8b5cf6" stroke-width="1.4"/>
+      <!-- Squinty happy eyes > < -->
+      <!-- Squinty happy eyes > < style -->
+      <path d="M10 20 L13 17.5 L16 20" stroke="#60a5fa" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M20 20 L23 17.5 L26 20" stroke="#60a5fa" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Blush marks -->
+      <ellipse cx="9.5" cy="23" rx="2" ry="1" fill="#f472b6" opacity="0.5"/>
+      <ellipse cx="26.5" cy="23" rx="2" ry="1" fill="#f472b6" opacity="0.5"/>
+      <!-- Tiny happy mouth -->
+      <path d="M14 24.5 Q18 27.5 22 24.5" stroke="#a78bfa" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <!-- Neck -->
+      <rect x="15" y="29" width="6" height="3" rx="1.5" fill="#8b5cf6" opacity="0.5"/>
+      <!-- Body -->
+      <rect x="10" y="32" width="16" height="9" rx="4" fill="#1e1b2e" stroke="#8b5cf6" stroke-width="1.2"/>
+      <!-- Body heart detail -->
+      <path d="M16 36.5 Q18 34.5 20 36.5 Q18 39 16 36.5Z" fill="#f472b6" opacity="0.7"/>
+    </svg>
+    <div class="mascot-tooltip">hi i'm aurora ✨</div>
+  </div>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────────────────────
+  // CONFIG — paste your values here after setup
+  // ─────────────────────────────────────────────────────────────
+  const WORKER_URL = 'YOUR_WORKER_URL_HERE'; // e.g. https://aurra.yourname.workers.dev
+  const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID_HERE';
+
+  // ─────────────────────────────────────────────────────────────
+  // KEY MAPS
+  // ─────────────────────────────────────────────────────────────
+  const KEY_NAMES = ['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'];
+  const getKeyName = (key, mode) => key === -1 ? '?' : KEY_NAMES[key] + (mode === 1 ? ' maj' : ' min');
+  const energyLabel = e => e > 0.8 ? 'intense' : e > 0.6 ? 'energetic' : e > 0.4 ? 'moderate' : e > 0.2 ? 'chill' : 'mellow';
+  const valenceLabel = v => v > 0.75 ? 'euphoric' : v > 0.55 ? 'uplifting' : v > 0.35 ? 'neutral' : v > 0.15 ? 'somber' : 'dark';
+
+  // ─────────────────────────────────────────────────────────────
+  // PKCE
+  // ─────────────────────────────────────────────────────────────
+  function generateVerifier() {
+    const arr = new Uint8Array(32);
+    crypto.getRandomValues(arr);
+    return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  }
+
+  async function generateChallenge(verifier) {
+    const data = new TextEncoder().encode(verifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // AUTH
+  // ─────────────────────────────────────────────────────────────
+  async function connectSpotify() {
+    const redirectUri = window.location.href.split('?')[0];
+    const verifier = generateVerifier();
+    const challenge = await generateChallenge(verifier);
+
+    sessionStorage.setItem('pkce_verifier', verifier);
+    sessionStorage.setItem('redirect_uri', redirectUri);
+
+    const params = new URLSearchParams({
+      client_id: SPOTIFY_CLIENT_ID,
+      response_type: 'code',
+      redirect_uri: redirectUri,
+      scope: 'user-read-private',
+      code_challenge_method: 'S256',
+      code_challenge: challenge,
+    });
+
+    window.location = `https://accounts.spotify.com/authorize?${params}`;
+  }
+
+  async function exchangeToken(code) {
+    const verifier = sessionStorage.getItem('pkce_verifier');
+    const redirectUri = sessionStorage.getItem('redirect_uri');
+
+    const res = await fetch(`${WORKER_URL}/spotify/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: redirectUri, code_verifier: verifier }),
+    });
+
+    const data = await res.json();
+    if (data.access_token) {
+      sessionStorage.setItem('spotify_token', data.access_token);
+      window.history.replaceState({}, '', window.location.pathname);
+      return data.access_token;
+    }
+    throw new Error(data.error || 'Token exchange failed');
+  }
+
+  function getToken() { return sessionStorage.getItem('spotify_token'); }
+
+  function disconnect() {
+    sessionStorage.clear();
+    document.getElementById('mainScreen').style.display = 'none';
+    document.getElementById('landingScreen').style.display = 'block';
+    document.getElementById('songCard').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SPOTIFY API
+  // ─────────────────────────────────────────────────────────────
+  async function spotifyFetch(endpoint) {
+    const res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Spotify error ${res.status}`);
+    }
+    return res.json();
+  }
+
+  function extractTrackId(url) {
+    const match = url.match(/track[/:]([A-Za-z0-9]+)/);
+    return match ? match[1] : null;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // ANALYZE
+  // ─────────────────────────────────────────────────────────────
+  async function analyze() {
+    const input = document.getElementById('spotifyLinkInput').value.trim();
+    const errEl = document.getElementById('mainError');
+    errEl.style.display = 'none';
+
+    if (!input) { showErr(errEl, 'Paste a Spotify song link to get started.'); return; }
+
+    const trackId = extractTrackId(input);
+    if (!trackId) { showErr(errEl, "Couldn't find a track ID. Make sure it's a song link, not a playlist."); return; }
+
+    document.getElementById('songCard').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+    showLoading('Fetching song data from Spotify...', 'reading musical DNA');
+
+    try {
+      const [track, features] = await Promise.all([
+        spotifyFetch(`/tracks/${trackId}`),
+        spotifyFetch(`/audio-features/${trackId}`).catch(() => null),
+      ]);
+
+      const artist = await spotifyFetch(`/artists/${track.artists[0].id}`).catch(() => null);
+      const genres = artist?.genres || [];
+
+      renderSongCard(track, features, genres);
+
+      setLoading('Finding your sonic twins...', 'AI analyzing DNA');
+      const recommendations = await getRecommendations(track, features, genres);
+      renderRecommendations(recommendations);
+
+      hideLoading();
+    } catch(e) {
+      hideLoading();
+      showErr(errEl, e.message || 'Something went wrong. Check the link and try again.');
+    }
+  }
+
+  function renderSongCard(track, features, genres) {
+    document.getElementById('songArt').src = track.album?.images?.[0]?.url || '';
+    document.getElementById('songTitle').textContent = track.name;
+    document.getElementById('songArtist').textContent = track.artists.map(a => a.name).join(', ');
+
+    const chips = features ? [
+      { label: 'BPM', value: Math.round(features.tempo) },
+      { label: 'Key', value: getKeyName(features.key, features.mode) },
+      { label: 'Energy', value: energyLabel(features.energy) },
+      { label: 'Mood', value: valenceLabel(features.valence) },
+      { label: 'Dance', value: Math.round(features.danceability * 100) + '%' },
+    ] : [];
+
+    document.getElementById('dnaGrid').innerHTML = chips.map(c => `
+      <div class="dna-chip">
+        <span class="dna-chip-label">${c.label}</span>
+        <span class="dna-chip-value">${c.value}</span>
+      </div>
+    `).join('');
+
+    document.getElementById('genreTags').innerHTML = genres.slice(0,6)
+      .map(g => `<span class="genre-tag">${g}</span>`).join('');
+
+    document.getElementById('songCard').style.display = 'block';
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // AI via Cloudflare Worker
+  // ─────────────────────────────────────────────────────────────
+  async function getRecommendations(track, features, genres) {
+    const res = await fetch(`${WORKER_URL}/recommend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track, features, genres }),
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.recommendations;
+  }
+
+  function renderRecommendations(recs) {
+    const grid = document.getElementById('recGrid');
+    grid.innerHTML = '';
+
+    recs.forEach((r, i) => {
+      const q = encodeURIComponent(`${r.title} ${r.artist}`);
+      const card = document.createElement('div');
+      card.className = 'rec-card stagger';
+      card.style.animationDelay = (i * 0.06) + 's';
+      card.innerHTML = `
+        <div class="rec-num">— ${String(i+1).padStart(2,'0')}</div>
+        <div class="rec-title">${esc(r.title)}</div>
+        <div class="rec-artist">${esc(r.artist)}</div>
+        <div class="rec-reason">${esc(r.reason)}</div>
+        <div class="rec-tags">${(r.matchTags||[]).map(t=>`<span class="rec-tag">${esc(t)}</span>`).join('')}</div>
+        <a class="rec-spotify-btn" href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 11-.277-1.215c3.809-.87 7.076-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.78.78 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.781.781 0 01.52-.973c3.632-1.102 8.147-.568 11.234 1.329a.78.78 0 01.256 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.937.937 0 11-.543-1.793c3.541-1.073 9.431-.866 13.152 1.337a.937.937 0 01-.992 1.613z"/></svg>
+          Find on Spotify
+        </a>
+      `;
+      grid.appendChild(card);
+    });
+
+    document.getElementById('resultsSection').style.display = 'block';
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────────
+  function showLoading(text, sub) {
+    document.getElementById('loadingText').textContent = text;
+    document.getElementById('loadingSub').textContent = sub;
+    document.getElementById('loadingSection').style.display = 'flex';
+    document.getElementById('analyzeBtn').disabled = true;
+  }
+
+  function setLoading(text, sub) {
+    document.getElementById('loadingText').textContent = text;
+    document.getElementById('loadingSub').textContent = sub;
+  }
+
+  function hideLoading() {
+    document.getElementById('loadingSection').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+
+  function showErr(el, msg) {
+    el.textContent = '⚠ ' + msg;
+    el.style.display = 'block';
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────────────────────────
+  (async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const token = getToken();
+
+    if (code) {
+      try {
+        await exchangeToken(code);
+        showMain();
+      } catch(e) {
+        document.getElementById('landingScreen').style.display = 'block';
+        console.error(e);
+      }
+    } else if (token) {
+      showMain();
+    } else {
+      document.getElementById('landingScreen').style.display = 'block';
+    }
+  })();
+
+  function showMain() {
+    document.getElementById('landingScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+  }
+</script>
+</body>
+</html>
