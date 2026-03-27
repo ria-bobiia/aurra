@@ -923,7 +923,7 @@ const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
     const res = await fetch(`${WORKER_URL}/recommend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track, features, genres }),
+      body: JSON.stringify({ track, features, genres, userToken: getToken() }),
     });
 
     const data = await res.json();
