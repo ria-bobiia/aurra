@@ -754,8 +754,8 @@
   // ─────────────────────────────────────────────────────────────
   // CONFIG — paste your values here after setup
   // ─────────────────────────────────────────────────────────────
- const WORKER_URL = 'https://aurra.val-amoaku.workers.dev';
-const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
+  const WORKER_URL = 'aurra.val-amoaku.workers.dev'; // e.g. https://aurra.yourname.workers.dev
+  const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
 
   // ─────────────────────────────────────────────────────────────
   // KEY MAPS
@@ -784,14 +784,14 @@ const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
   // AUTH
   // ─────────────────────────────────────────────────────────────
   async function connectSpotify() {
-     redirectUri = window.location.href.split('?')[0];
-     verifier = generateVerifier();
-     challenge = await generateChallenge(verifier);
+    const redirectUri = window.location.href.split('?')[0];
+    const verifier = generateVerifier();
+    const challenge = await generateChallenge(verifier);
 
     sessionStorage.setItem('pkce_verifier', verifier);
     sessionStorage.setItem('redirect_uri', redirectUri);
 
-     params = new URLSearchParams({
+    const params = new URLSearchParams({
       client_id: SPOTIFY_CLIENT_ID,
       response_type: 'code',
       redirect_uri: redirectUri,
@@ -804,16 +804,16 @@ const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
   }
 
   async function exchangeToken(code) {
-     verifier = sessionStorage.getItem('pkce_verifier');
-     redirectUri = sessionStorage.getItem('redirect_uri');
+    const verifier = sessionStorage.getItem('pkce_verifier');
+    const redirectUri = sessionStorage.getItem('redirect_uri');
 
-     res = await fetch(`${WORKER_URL}/spotify/token`, {
+    const res = await fetch(`${WORKER_URL}/spotify/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, redirect_uri: redirectUri, code_verifier: verifier }),
     });
 
-     data = await res.json();
+    const data = await res.json();
     if (data.access_token) {
       sessionStorage.setItem('spotify_token', data.access_token);
       window.history.replaceState({}, '', window.location.pathname);
@@ -836,7 +836,7 @@ const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
   // SPOTIFY API
   // ─────────────────────────────────────────────────────────────
   async function spotifyFetch(endpoint) {
-     res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+    const res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
     if (!res.ok) {
@@ -869,18 +869,20 @@ const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
     showLoading('Fetching song data from Spotify...', 'reading musical DNA');
 
     try {
-      const [track, features] = await Promise.all([
+      const [track, artist] = await Promise.all([
         spotifyFetch(`/tracks/${trackId}`),
-        spotifyFetch(`/audio-features/${trackId}`).catch(() => null),
+        spotifyFetch(`/tracks/${trackId}`).then(t =>
+          spotifyFetch(`/artists/${t.artists[0].id}`).catch(() => null)
+        ),
       ]);
 
-      const artist = await spotifyFetch(`/artists/${track.artists[0].id}`).catch(() => null);
       const genres = artist?.genres || [];
 
-      renderSongCard(track, features, genres);
+      // Pass trackId to worker — it will fetch audio features server-side
+      renderSongCard(track, null, genres);
 
       setLoading('Finding your sonic twins...', 'AI analyzing DNA');
-      const recommendations = await getRecommendations(track, features, genres);
+      const recommendations = await getRecommendations(track, null, genres, trackId);
       renderRecommendations(recommendations);
 
       hideLoading();
@@ -919,15 +921,19 @@ const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
   // ─────────────────────────────────────────────────────────────
   // AI via Cloudflare Worker
   // ─────────────────────────────────────────────────────────────
-  async function getRecommendations(track, features, genres) {
+  async function getRecommendations(track, features, genres, trackId) {
     const res = await fetch(`${WORKER_URL}/recommend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track, features, genres, userToken: getToken() }),
+      body: JSON.stringify({ track, features, genres, trackId }),
     });
 
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+
+    // Update song card with real features from worker
+    if (data.features) renderSongCard(track, data.features, genres);
+
     return data.recommendations;
   }
 
