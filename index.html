@@ -22,14 +22,6 @@
       --green-glow: rgba(139,92,246,0.3);
       --accent2: #60a5fa;
       --radius: 14px;
-
-      /* ── CONFIGURATION ──────────────────────────────────────
-         After deploying your Cloudflare Worker, paste its URL below.
-         Example: https://aurra.yourname.workers.dev
-         Also paste your Spotify Client ID.
-      ──────────────────────────────────────────────────────── */
-      --worker-url: "";
-      --spotify-client-id: "";
     }
 
     html { scroll-behavior: smooth; }
@@ -66,7 +58,6 @@
       animation: drift 12s ease-in-out infinite alternate;
     }
 
-    /* second orb */
     .orb2 {
       position: fixed;
       width: 500px;
@@ -80,7 +71,6 @@
       animation: drift 16s ease-in-out infinite alternate-reverse;
     }
 
-    /* third orb — subtle pink center */
     .orb3 {
       position: fixed;
       width: 300px;
@@ -103,13 +93,13 @@
       max-width: 900px;
       margin: 0 auto;
       padding: 48px 24px 120px;
-      position: relative; z-index: 1;
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    /* ── Header ── */
     .header {
       margin-bottom: 24px;
       animation: slideIn 0.6s ease both;
@@ -122,13 +112,6 @@
       gap: 10px;
       margin-bottom: 8px;
       justify-content: center;
-    }
-
-    .header p {
-      font-size: 0.85rem;
-      color: var(--muted);
-      letter-spacing: 0.02em;
-      line-height: 1.6;
     }
 
     .wordmark h1 {
@@ -159,14 +142,14 @@
       color: var(--green);
       text-transform: uppercase;
     }
+
+    .header p {
       font-size: 0.85rem;
       color: var(--muted);
       letter-spacing: 0.02em;
-      max-width: 480px;
       line-height: 1.6;
     }
 
-    /* ── Landing (not connected) ── */
     #landingScreen {
       animation: slideIn 0.5s ease both;
       display: flex;
@@ -200,11 +183,7 @@
       line-height: 1.7;
     }
 
-    .feature-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .feature-list { display: flex; flex-direction: column; gap: 10px; }
 
     .feature {
       display: flex;
@@ -219,7 +198,7 @@
       height: 6px;
       min-width: 6px;
       border-radius: 50%;
-      background: var(--green);
+      background: linear-gradient(135deg, #8b5cf6, #60a5fa);
     }
 
     .btn {
@@ -254,7 +233,6 @@
 
     .btn-ghost:hover { background: var(--surface2); }
 
-    /* ── Main screen ── */
     #mainScreen { display: none; animation: slideIn 0.5s ease both; width: 100%; }
 
     .user-pill {
@@ -263,7 +241,7 @@
       gap: 8px;
       padding: 6px 14px;
       background: var(--green-dim);
-      border: 1px solid rgba(29,185,84,0.3);
+      border: 1px solid rgba(139,92,246,0.3);
       border-radius: 99px;
       font-size: 0.7rem;
       color: var(--green);
@@ -326,7 +304,6 @@
       margin-bottom: 32px;
     }
 
-    /* ── Error ── */
     .error-box {
       background: rgba(255,80,80,0.08);
       border: 1px solid rgba(255,80,80,0.3);
@@ -338,7 +315,6 @@
       display: none;
     }
 
-    /* ── Loading ── */
     #loadingSection {
       display: none;
       flex-direction: column;
@@ -366,8 +342,7 @@
       letter-spacing: 0.1em;
     }
 
-    /* ── Song card ── */
-    #songCard { display: none; margin-bottom: 32px; animation: slideIn 0.4s ease both; }
+    #songCard { display: none; margin-bottom: 32px; animation: slideIn 0.4s ease both; width: 100%; }
 
     .song-card {
       background: var(--surface);
@@ -450,8 +425,7 @@
       color: var(--muted);
     }
 
-    /* ── Results ── */
-    #resultsSection { display: none; animation: slideIn 0.4s ease both; }
+    #resultsSection { display: none; animation: slideIn 0.4s ease both; width: 100%; }
 
     .results-header {
       display: flex;
@@ -573,7 +547,6 @@
       border-color: var(--green);
     }
 
-    /* ── Footer ── */
     .footer {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -597,7 +570,6 @@
     }
 
     .mascot:hover { transform: translateY(-4px); }
-
     .mascot:hover .mascot-tooltip { opacity: 1; transform: translateY(-4px); }
 
     .mascot-tooltip {
@@ -647,7 +619,6 @@
     <p>Because "fans also like" isn't good enough.</p>
   </header>
 
-  <!-- ── LANDING (not connected) ── -->
   <div id="landingScreen">
     <div class="connect-card">
       <h2>Stop Googling<br/>"songs that sound like—"</h2>
@@ -664,7 +635,6 @@
     </div>
   </div>
 
-  <!-- ── MAIN SCREEN ── -->
   <div id="mainScreen">
     <div class="user-pill">
       <div class="dot"></div>
@@ -681,14 +651,12 @@
     <div class="hint">open.spotify.com/track/... or spotify:track:...</div>
     <div id="mainError" class="error-box"></div>
 
-    <!-- Loading -->
     <div id="loadingSection">
       <div class="loading-ring"></div>
       <div class="loading-text" id="loadingText">Fetching song data...</div>
       <div class="loading-sub" id="loadingSub">reading musical DNA</div>
     </div>
 
-    <!-- Song card -->
     <div id="songCard">
       <div class="song-card">
         <img class="song-art" id="songArt" src="" alt=""/>
@@ -701,7 +669,6 @@
       </div>
     </div>
 
-    <!-- Results -->
     <div id="resultsSection">
       <div class="results-header">
         <h2>Songs that match your <span>DNA</span></h2>
@@ -718,32 +685,20 @@
   <span>Spotify API × Claude AI</span>
   <div class="mascot" title="hi i'm aurora :)">
     <svg width="36" height="42" viewBox="0 0 36 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Headphone band -->
       <path d="M7 14 Q18 4 29 14" stroke="#8b5cf6" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-      <!-- Headphone left cup -->
       <rect x="2" y="12" width="5" height="8" rx="2.5" fill="#8b5cf6"/>
-      <!-- Headphone right cup -->
       <rect x="29" y="12" width="5" height="8" rx="2.5" fill="#8b5cf6"/>
-      <!-- Antenna -->
       <line x1="18" y1="12" x2="18" y2="7" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round"/>
       <circle cx="18" cy="5.5" r="2.5" fill="#60a5fa"/>
       <circle cx="18" cy="5.5" r="1" fill="white" opacity="0.9"/>
-      <!-- Head -->
       <rect x="7" y="12" width="22" height="18" rx="6" fill="#1e1b2e" stroke="#8b5cf6" stroke-width="1.4"/>
-      <!-- Squinty happy eyes > < -->
-      <!-- Squinty happy eyes > < style -->
       <path d="M10 20 L13 17.5 L16 20" stroke="#60a5fa" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M20 20 L23 17.5 L26 20" stroke="#60a5fa" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- Blush marks -->
       <ellipse cx="9.5" cy="23" rx="2" ry="1" fill="#f472b6" opacity="0.5"/>
       <ellipse cx="26.5" cy="23" rx="2" ry="1" fill="#f472b6" opacity="0.5"/>
-      <!-- Tiny happy mouth -->
       <path d="M14 24.5 Q18 27.5 22 24.5" stroke="#a78bfa" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-      <!-- Neck -->
       <rect x="15" y="29" width="6" height="3" rx="1.5" fill="#8b5cf6" opacity="0.5"/>
-      <!-- Body -->
       <rect x="10" y="32" width="16" height="9" rx="4" fill="#1e1b2e" stroke="#8b5cf6" stroke-width="1.2"/>
-      <!-- Body heart detail -->
       <path d="M16 36.5 Q18 34.5 20 36.5 Q18 39 16 36.5Z" fill="#f472b6" opacity="0.7"/>
     </svg>
     <div class="mascot-tooltip">hi i'm aurora ✨</div>
@@ -751,23 +706,17 @@
 </div>
 
 <script>
-  // ─────────────────────────────────────────────────────────────
-  // CONFIG — paste your values here after setup
-  // ─────────────────────────────────────────────────────────────
-  const WORKER_URL = 'aurra.val-amoaku.workers.dev'; // e.g. https://aurra.yourname.workers.dev
+  // ── CONFIG — add your values here ──────────────────────────
+  const WORKER_URL = 'aurra.val-amoaku.workers.dev';
   const SPOTIFY_CLIENT_ID = '0c4ef29ea34b4e28b04fbc49d0c8bafc';
 
-  // ─────────────────────────────────────────────────────────────
-  // KEY MAPS
-  // ─────────────────────────────────────────────────────────────
+  // ── KEY MAPS ───────────────────────────────────────────────
   const KEY_NAMES = ['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'];
   const getKeyName = (key, mode) => key === -1 ? '?' : KEY_NAMES[key] + (mode === 1 ? ' maj' : ' min');
   const energyLabel = e => e > 0.8 ? 'intense' : e > 0.6 ? 'energetic' : e > 0.4 ? 'moderate' : e > 0.2 ? 'chill' : 'mellow';
   const valenceLabel = v => v > 0.75 ? 'euphoric' : v > 0.55 ? 'uplifting' : v > 0.35 ? 'neutral' : v > 0.15 ? 'somber' : 'dark';
 
-  // ─────────────────────────────────────────────────────────────
-  // PKCE
-  // ─────────────────────────────────────────────────────────────
+  // ── PKCE ───────────────────────────────────────────────────
   function generateVerifier() {
     const arr = new Uint8Array(32);
     crypto.getRandomValues(arr);
@@ -780,9 +729,7 @@
     return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // AUTH
-  // ─────────────────────────────────────────────────────────────
+  // ── AUTH ───────────────────────────────────────────────────
   async function connectSpotify() {
     const redirectUri = window.location.href.split('?')[0];
     const verifier = generateVerifier();
@@ -832,9 +779,7 @@
     document.getElementById('resultsSection').style.display = 'none';
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // SPOTIFY API
-  // ─────────────────────────────────────────────────────────────
+  // ── SPOTIFY API ────────────────────────────────────────────
   async function spotifyFetch(endpoint) {
     const res = await fetch(`https://api.spotify.com/v1${endpoint}`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
@@ -851,9 +796,7 @@
     return match ? match[1] : null;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // ANALYZE
-  // ─────────────────────────────────────────────────────────────
+  // ── ANALYZE ────────────────────────────────────────────────
   async function analyze() {
     const input = document.getElementById('spotifyLinkInput').value.trim();
     const errEl = document.getElementById('mainError');
@@ -869,22 +812,17 @@
     showLoading('Fetching song data from Spotify...', 'reading musical DNA');
 
     try {
-      const [track, artist] = await Promise.all([
-        spotifyFetch(`/tracks/${trackId}`),
-        spotifyFetch(`/tracks/${trackId}`).then(t =>
-          spotifyFetch(`/artists/${t.artists[0].id}`).catch(() => null)
-        ),
-      ]);
-
+      const track = await spotifyFetch(`/tracks/${trackId}`);
+      const artist = await spotifyFetch(`/artists/${track.artists[0].id}`).catch(() => null);
       const genres = artist?.genres || [];
 
-      // Pass trackId to worker — it will fetch audio features server-side
       renderSongCard(track, null, genres);
 
       setLoading('Finding your sonic twins...', 'AI analyzing DNA');
-      const recommendations = await getRecommendations(track, null, genres, trackId);
-      renderRecommendations(recommendations);
+      const { recommendations, features } = await getRecommendations(track, genres, trackId);
 
+      if (features) renderSongCard(track, features, genres);
+      renderRecommendations(recommendations);
       hideLoading();
     } catch(e) {
       hideLoading();
@@ -918,23 +856,17 @@
     document.getElementById('songCard').style.display = 'block';
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // AI via Cloudflare Worker
-  // ─────────────────────────────────────────────────────────────
-  async function getRecommendations(track, features, genres, trackId) {
+  // ── AI via Cloudflare Worker ───────────────────────────────
+  async function getRecommendations(track, genres, trackId) {
     const res = await fetch(`${WORKER_URL}/recommend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track, features, genres, trackId }),
+      body: JSON.stringify({ track, genres, trackId }),
     });
 
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-
-    // Update song card with real features from worker
-    if (data.features) renderSongCard(track, data.features, genres);
-
-    return data.recommendations;
+    return { recommendations: data.recommendations, features: data.features };
   }
 
   function renderRecommendations(recs) {
@@ -963,9 +895,7 @@
     document.getElementById('resultsSection').style.display = 'block';
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────────────────────────
+  // ── HELPERS ────────────────────────────────────────────────
   function showLoading(text, sub) {
     document.getElementById('loadingText').textContent = text;
     document.getElementById('loadingSub').textContent = sub;
@@ -992,9 +922,7 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────────────────────────
+  // ── INIT ───────────────────────────────────────────────────
   (async function init() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
