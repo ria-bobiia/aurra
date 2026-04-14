@@ -12,7 +12,7 @@ Process:
 2. Paste any Spotify track link
 3. The app pulls the track's audio features from Spotify's API
 4. Those features get sent to Claude with a structured prompt
-5. Claude recommends 8 songs based on genre, key, BPM, texture, and energy with each recommendation linked directly to Spotify
+5. Claude recommends 8 songs based on genre, key, BPM, instrumentation, and energy with each recommendation linked directly to Spotify
 
 Stack:
 - Frontend - HTML, CSS, Vanilla JS
