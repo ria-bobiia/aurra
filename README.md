@@ -15,9 +15,9 @@ Process:
 5. Claude recommends 8 songs based on genre, key, BPM, texture, and energy with each recommendation linked directly to Spotify
 
 Stack:
-Frontend - HTML, CSS, Vanilla JS
-Backend- Cloudflare Worker
-Auth - Spotify OAuth 2.0 with PKCE
-Music data - Spotify Web Dev API
-Recommendations - Anthropic Claude API
+- Frontend - HTML, CSS, Vanilla JS
+- Backend- Cloudflare Worker
+- Auth - Spotify OAuth 2.0 with PKCE
+- Music data - Spotify Web Dev API
+- Recommendations - Anthropic Claude API
 
